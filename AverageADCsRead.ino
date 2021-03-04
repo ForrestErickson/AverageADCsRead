@@ -1,6 +1,6 @@
 /* AverageADCsRead
   A program to periodically read Arduino Uno ADC
-  The readings are averaged.
+  NOT YET: The readings are averaged.
   A time stamp and the readings are reported out the serial port
   The onboard LED winks to show the loop is running.
   Author: (Forrest) Lee Erickson
@@ -14,8 +14,7 @@ const String PROGRAMNAME = "AverageADCsRead";
 
 //For ADC indexing
 int muxNumber[] = {A0, A1, A2, A3, A4, A5};
-int MAXDAC = sizeof(muxNumber) / sizeof(muxNumber[0]);
-
+int MAXADC = sizeof(muxNumber) / sizeof(muxNumber[0]);
 const long SAMPLE_PERIOD = 300; // in mSec.
 
 
@@ -39,14 +38,14 @@ void setup() {
   Serial.print("Begin: ");
   Serial.println(PROGRAMNAME);
   Serial.print("muxNumber: ");
-  Serial.println(MAXDAC);
+  Serial.println(MAXADC);
   Serial.println("TIME, A0,A1,A2,A3,A4,A5 ");
 }//end setup
 
 void loop() {
   // put your main code here, to run repeatedly:
   Serial.print(millis());
-  for (int ii = 0; ii < MAXDAC ; ii++) {
+  for (int ii = 0; ii < MAXADC ; ii++) {
     Serial.print(", ");
     Serial.print(analogRead(muxNumber[ii]));
   }

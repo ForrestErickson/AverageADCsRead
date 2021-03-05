@@ -19,9 +19,11 @@ const int MAXADC = sizeof(MUX_NUMBER) / sizeof(MUX_NUMBER[0]);  //The maximum mu
 const long SAMPLE_PERIOD = 300;                                 // in mSec.
 const int AVG_NUMBER = 4;                                       //Number of samples to average
 
-//Array of measurements. Columbs are ADC measurements A0, A1...
+//Array of measurements. Columns are ADC measurements A0, A1...
 //rows are aged measurements
 int measurementsADC[AVG_NUMBER][MAXADC];
+int rowWriteIndex = 0;                                              //Row where to write current ADC.
+int total[MAXADC];                                                  //Total of columns (ADC)  
 
 
 //For Wink LED.
@@ -35,6 +37,7 @@ long nextLEDchange = 100; //time in ms.
 //For serial setup
 const long BAUDRATE = 115200;
 
+//****************Functions *****************************************
 //Function to read all ADC into a row.
 void readADC(int rowIndex){ 
     for (int adcIndex =0; adcIndex < MAXADC; adcIndex++) { 
@@ -52,20 +55,19 @@ void setup() {
   Serial.begin(BAUDRATE);
   delay(1000);                  //Arbitrary wate.
 
+//Splash screen
+  Serial.print("Begin: ");
+  Serial.print(PROGRAMNAME);
+  Serial.print(", Version: ");
+  Serial.println(VERSION);  
+  Serial.print("MUX_NUMBER: ");
+  Serial.println(MAXADC);
+  Serial.println("TIME, A0,A1,A2,A3,A4,A5 ");
+
 //Fill the array with successive measurements fast as we can.
   for (int avgNumIndex = 0; avgNumIndex < AVG_NUMBER; avgNumIndex++) {
     readADC(avgNumIndex);
   }//avgNumIndex
-
-  Serial.print("Begin: ");
-  Serial.print(PROGRAMNAME);
-  Serial.print(", Version: ");
-  Serial.println(VERSION);
-  
-  Serial.print("MUX_NUMBER: ");
-  Serial.println(MAXADC);
-  Serial.println("TIME, A0,A1,A2,A3,A4,A5 ");
-  
 //Print the array
   for (int avgNumIndex = 0; avgNumIndex < AVG_NUMBER; avgNumIndex++) {
     Serial.print(avgNumIndex); Serial.print(": ");
@@ -75,20 +77,63 @@ void setup() {
     }//adcIndex 
     Serial.println();
   }//avgNumIndex
+
+//Sum colums into total array
+//  for (int avgNumIndex = 0; avgNumIndex < AVG_NUMBER; avgNumIndex++) {
+  Serial.println("Totals:"); 
+  for (int adcIndex =0; adcIndex < MAXADC; adcIndex++) { 
+//    Serial.print(avgNumIndex); Serial.print(": ");
+//    for (int adcIndex =0; adcIndex < MAXADC; adcIndex++) { 
+    for (int avgNumIndex = 0; avgNumIndex < AVG_NUMBER; avgNumIndex++) {
+      //total
+      total[adcIndex] = total[adcIndex] + measurementsADC[avgNumIndex][adcIndex];
+    }//adcIndex 
+  Serial.print(adcIndex); 
+  Serial.print(": "); 
+  Serial.print(total[adcIndex]); 
+  Serial.print(", "); 
+  Serial.println();
+  }//avgNumIndex
     
 }//end setup
 
 void loop() {
   // put your main code here, to run repeatedly:
 
-  //Get Analog inputs
-  Serial.print(millis());
-  for (int ii = 0; ii < MAXADC ; ii++) {
-    Serial.print(", ");
-    Serial.print(analogRead(MUX_NUMBER[ii]));
+//Update analog input array
+  //Increment the row for the next aquire
+  rowWriteIndex++;
+  rowWriteIndex = rowWriteIndex%AVG_NUMBER; 
+  //Subtract the current rwo from the total array elements
+  for(int adcIndex=0; adcIndex < MAXADC; adcIndex++) {
+    total[adcIndex] = total[adcIndex]-measurementsADC[rowWriteIndex][adcIndex];  
   }
+  //Get the new ADC measurements into array
+  readADC(rowWriteIndex);
+  //Add the new measurements to the total   
+  for(int adcIndex=0; adcIndex < MAXADC; adcIndex++) {
+    total[adcIndex] = total[adcIndex]+measurementsADC[rowWriteIndex][adcIndex];  
+  }
+//Print time stamped averages
+  //Print the time.
+  Serial.print(millis());
+  //For all samples print the average
+    for (int adcIndex =0; adcIndex < MAXADC; adcIndex++) { 
+      Serial.print(total[adcIndex]/AVG_NUMBER); 
+      Serial.print(", "); 
+    }//adcIndex 
+
+////ADC Read and print real time  
+//  Serial.print(millis());
+//  for (int ii = 0; ii < MAXADC ; ii++) {
+//    Serial.print(", ");
+//    Serial.print(analogRead(MUX_NUMBER[ii]));
+//  }
+
   Serial.println();
+  
   delay(SAMPLE_PERIOD);
+  
   
   //Wink the LED
   if (((millis() - lastLEDtime) > nextLEDchange) || (millis() < lastLEDtime)) {

@@ -58,15 +58,17 @@ void setup() {
   delay(1000);                  //Arbitrary wate.
 
   //Splash screen
+#ifdef DEBUG    
   Serial.print("Begin: ");
   Serial.print(PROGRAMNAME);
   Serial.print(", Version: ");
   Serial.println(VERSION);
-#ifdef DEBUG    
   Serial.print("MUX_NUMBER: ");
   Serial.println(MAXADC);
-  Serial.println("TIME, A0,A1,A2,A3,A4,A5 ");
 #endif
+//Header for output data
+  Serial.println("TIME, A0,A1,A2,A3,A4,A5 ");
+
 
   //Fill the array with successive measurements fast as we can.
   for (int avgNumIndex = 0; avgNumIndex < AVG_NUMBER; avgNumIndex++) {
